@@ -1,6 +1,7 @@
 package com.example.itemprice
 
 import android.os.Bundle
+import android.widget.SearchView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -24,41 +25,35 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         recyclerView = findViewById(R.id.recyclerView)
+        val searchView = findViewById<SearchView>(R.id.searchView)
+
         recyclerView.layoutManager = LinearLayoutManager(this)
 
-        // Fetch data from Google Sheets
-        fetchDataFromGoogleSheets()
-    }
-
-    private fun fetchDataFromGoogleSheets() {
-        // Initialize Retrofit
         val retrofit = Retrofit.Builder()
             .baseUrl("https://sheets.googleapis.com/v4/spreadsheets/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
 
-        val googleSheetsApi = retrofit.create(GoogleSheetsApi::class.java)
+        val api = retrofit.create(GoogleSheetsApi::class.java)
 
-        // Make the request
-        googleSheetsApi.getSheetData(sheetId, range, apiKey).enqueue(object : Callback<SheetResponse> {
+        api.getSheetData(sheetId, range, apiKey).enqueue(object : Callback<SheetResponse> {
             override fun onResponse(call: Call<SheetResponse>, response: Response<SheetResponse>) {
                 if (response.isSuccessful) {
-                    // Extract data from the response
-                    val sheetData = response.body()?.values
-                    val itemPriceList = mutableListOf<ItemPrice>()
+                    val itemList = response.body()?.values?.mapNotNull {
+                        if (it.size >= 2) ItemPrice(it[0], it[1].toDoubleOrNull() ?: 0.0) else null
+                    } ?: listOf()
 
-                    // Parse the sheet data
-                    sheetData?.forEach { row ->
-                        if (row.size >= 2) {
-                            val item = row[0]  // Item name
-                            val price = row[1].toDoubleOrNull() ?: 0.0  // Price, default to 0 if not valid
-                            itemPriceList.add(ItemPrice(item, price))
-                        }
-                    }
-
-                    // Set up the RecyclerView adapter with the data
-                    itemPriceAdapter = ItemPriceAdapter(itemPriceList)
+                    itemPriceAdapter = ItemPriceAdapter(itemList)
                     recyclerView.adapter = itemPriceAdapter
+
+                    searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+                        override fun onQueryTextSubmit(query: String?): Boolean = false
+                        override fun onQueryTextChange(newText: String?): Boolean {
+                            itemPriceAdapter.filter.filter(newText)
+                            return true
+                        }
+                    })
+
                 } else {
                     Toast.makeText(this@MainActivity, "Failed to load data", Toast.LENGTH_SHORT).show()
                 }
