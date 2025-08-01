@@ -15,8 +15,8 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var itemPriceAdapter: ItemPriceAdapter
-    private val sheetId = "14wT99Sbcvo9ME6TlXh_EZq2LGCV05gcLf93X9hEWXNA" // Replace with your actual Google Sheet ID
-    private val apiKey = "AIzaSyArFjc75z3lM-NQMsmgFpzkBqUhbHLunzU"  // Replace with your API Key
+    private val sheetId = BuildConfig.GOOGLE_SHEET_ID
+    private val apiKey = BuildConfig.GOOGLE_API_KEY
     private val range = "Sheet1!A2:B" // Range where your data is
 
     override fun onCreate(savedInstanceState: Bundle?) {
